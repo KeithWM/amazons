@@ -1,7 +1,8 @@
-import game
 from matplotlib import pyplot as plt
 from matplotlib import animation
 import itertools
+
+import utils
 
 
 def mover_iter():
@@ -15,7 +16,7 @@ def mover_iter():
 
 
 if __name__ == "__main__":
-    g = game.Game(2, 8)
+    g = utils.Game(2, 8)
 
     mover = mover_iter()
 
