@@ -1,5 +1,3 @@
-from matplotlib import pyplot as plt
-from matplotlib import animation
 import itertools
 
 import utils
@@ -7,16 +5,17 @@ import utils
 
 def mover_iter():
     g.start_game()
-    g.make_move(0, 0, 0, 4, 0, 2)
-    print('moved')
     yield None
-    g.make_move(1, 0, 2, 4, 2, 2)
-    print('moved')
-    yield None
+    for player in itertools.islice(itertools.cycle(g.players), 5):
+        piece, to, arrow = player.find_best_move()
+        print(f'found best move?! {piece.i, piece.j} - {to} - {arrow}')
+        g.make_move(player.i_player, piece, *to, *arrow)
+        yield None
 
 
 if __name__ == "__main__":
-    g = utils.Game(2, 8)
+    with_plot = False
+    g = utils.Game(2, 8, with_plot=with_plot)
 
     mover = mover_iter()
 
@@ -31,7 +30,13 @@ if __name__ == "__main__":
         arrow_artists = (arrow.artist for arrow in g.arrows)
         return tuple(itertools.chain(pieces_artists, arrow_artists))
 
+    if with_plot:
+        from matplotlib import pyplot as plt
+        from matplotlib import animation
 
-    ani = animation.FuncAnimation(g.plot.fig, update, frames=5, interval=1000,
-                                  init_func=init_plot, blit=True)
-    plt.show()
+        ani = animation.FuncAnimation(g.plot.fig, update, frames=5, interval=100,
+                                      init_func=init_plot, blit=True)
+        plt.show()
+    else:
+        for _ in mover:
+            g.board.print()
