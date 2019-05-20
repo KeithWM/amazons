@@ -27,8 +27,8 @@ class DeltaScorer(Scorer):
         our_moves = self.count_squares(array, us)
         their_moves = self.count_squares(array, them)
 
-        our_squares = np.logical_and(our_moves < their_moves + 2, our_moves != __class__.BIGINT)
-        their_squares = np.logical_and(their_moves <= our_moves - 2, their_moves != __class__.BIGINT)
+        our_squares = np.logical_and(our_moves < their_moves + 1, our_moves != __class__.BIGINT)
+        their_squares = np.logical_and(their_moves <= our_moves - 1, their_moves != __class__.BIGINT)
         unreachable_squares = np.logical_and(our_moves == __class__.BIGINT, their_moves == __class__.BIGINT)
         assert our_squares.sum() + their_squares.sum() + unreachable_squares.sum() == np.prod(array.shape)
         return our_squares.sum() - their_squares.sum(), unreachable_squares.sum()
@@ -65,10 +65,11 @@ class DeltaScorer(Scorer):
 if __name__ == "__main__":
     from matplotlib import pyplot as plt
 
-    g = utils.Game(2, 4)
+    g = utils.Game(1, 4)
     g.start_game()
 
     scorer = DeltaScorer()
-    print(scorer(g.board.array, g.players[0].us, g.players[1].them))
+    g.make_move(0, 0, 1, 2, 2, 2)
+    print(scorer(g.board.array, g.players[0].us, g.players[0].them))
     print(scorer(g.board.array, g.players[1].us, g.players[1].them))
     plt.show()

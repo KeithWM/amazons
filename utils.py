@@ -10,6 +10,10 @@ import scorer
 DIRECTIONS = ((1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1))
 
 
+def print_pos(i, j):
+    return chr(ord('A') + j) + str(i + 1)
+
+
 class Occupier(Enum):
     EMPTY = 0
     ARROW = 1
@@ -119,26 +123,36 @@ class Player:
     def __init__(self, n_pieces, i_player, game):
         assert i_player in (0, 1), f'More than two players not yet supported'
         self.i_player = i_player
-        self.us = Occupier.PIECE_W if i_player == 0 else Occupier.PIECE_B
-        self.them = Occupier.PIECE_B if i_player == 0 else Occupier.PIECE_W
+        if i_player == 0:
+            self.us = Occupier.PIECE_W
+            self.them = Occupier.PIECE_B
+            self.name = 'White'
+        elif i_player == 1:
+            self.us = Occupier.PIECE_B
+            self.them = Occupier.PIECE_W
+            self.name = 'Black'
+        else:
+            raise ValueError
         self.pieces = [Item.wo_artist(self.us) for _ in range(n_pieces)]
         self.game = game
         self.board_scorer = scorer.DeltaScorer()
 
     def find_best_move(self):
         scores = self._score_all_possible_moves()
+        if not scores:
+            return None
         best_key, best_score = [(key, score) for key, score in scores.items()][0]
         for key, score in scores.items():
             if self._is_better_score(score, best_score):
                 best_key, best_score = key, score
-        return key
+        return best_key
 
     @staticmethod
     def _is_better_score(curr, best):
         for c, b in zip(curr, best):
-            if c > b:
-                return True
             if c < b:
+                return True
+            if c > b:
                 return False
             if c == b:
                 continue
@@ -179,7 +193,17 @@ class Plot:
         checker = (np.arange(m, dtype=int)[:, None] - np.arange(n, dtype=int)[None, :]) % 2
 
         self.fig, self.ax = plt.subplots()
-        self.ax.imshow(checker, cmap='gray', interpolation='nearest', vmin=-2, vmax=2)
+        self.ax.imshow(checker, cmap='gray', interpolation='nearest', vmin=-2, vmax=2, origin='lower')
+
+        self.ax.set_xticks([])
+        self.ax.set_yticks([])
+
+        for i in range(m):
+            self.ax.text(-1, i, str(i+1))
+        for j in range(n):
+            self.ax.text(j, -1, chr(ord('A') + j))
+
+        self.title_artist = self.ax.text(n / 2 - .5, m - .25, 'Title', horizontalalignment='center')
 
         for player in players:
             for piece in player.pieces:
@@ -217,7 +241,7 @@ class Game:
 
         self.board = Board.empty(board_dims)
         self.players = [Player(n_pieces, i, self) for i in range(n_players)]
-        self.arrows = [Item.wo_artist(Occupier.ARROW) for _ in range(int(np.prod(board_dims)))]
+        self.arrows = [Item.wo_artist(Occupier.ARROW) for _ in np.ndindex(self.board.array.shape)]
         self.n_arrows = 0
         self.plot = Plot(self.board, self.players, self.arrows) if with_plot else \
             DummyPlot(self.board, self.players, self.arrows)
@@ -234,6 +258,8 @@ class Game:
             self.board = self.board.add_obj(j, self.board.n - i - 1, piece_b.occ)
 
     def _initial_positions(self):
+        if self.n_pieces == 1:
+            return (0, self.board.n // 2),
         if self.n_pieces == 2:
             return (0, self.board.n // 2), (self.board.m - 1, self.board.n // 2 - 1)
         else:
