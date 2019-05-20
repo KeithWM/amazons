@@ -139,7 +139,7 @@ class Player:
             raise ValueError
         self.pieces = [Item.wo_artist(self.us) for _ in range(n_pieces)]
         self.game = game
-        self.board_scorer = scorer.DeltaScorer()
+        self.board_scorer = scorer.SimpleScorer()
 
     def find_best_move(self):
         scores = self._score_all_possible_moves()

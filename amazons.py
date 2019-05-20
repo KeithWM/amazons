@@ -27,7 +27,7 @@ def mover_iter():
 
 if __name__ == "__main__":
     with_plot = True
-    g = utils.Game('A4D1G1J4', (10, 10), with_plot=with_plot)
+    g = utils.Game('B2E5', (6, 6), with_plot=with_plot)
 
     mover = mover_iter()
 
@@ -48,7 +48,8 @@ if __name__ == "__main__":
         from matplotlib import pyplot as plt
         from matplotlib import animation
 
-        ani = animation.FuncAnimation(g.plot.fig, update, frames=100, interval=100,
+        frames = g.board.m * g.board.n
+        ani = animation.FuncAnimation(g.plot.fig, update, frames=frames, interval=100,
                                       init_func=init_plot, blit=True)
         ani.save('animation.mp4', fps=10, extra_args=['-vcodec', 'libx264'])
         plt.show()

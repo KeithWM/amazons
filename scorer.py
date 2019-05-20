@@ -27,8 +27,8 @@ class DeltaScorer(Scorer):
         our_moves = self.count_squares(array, us)
         their_moves = self.count_squares(array, them)
 
-        our_squares = np.logical_and(our_moves < their_moves + 1, our_moves != __class__.BIGINT)
-        their_squares = np.logical_and(their_moves <= our_moves - 1, their_moves != __class__.BIGINT)
+        our_squares = np.logical_and(our_moves < their_moves + 2, our_moves != __class__.BIGINT)
+        their_squares = np.logical_and(their_moves <= our_moves - 2, their_moves != __class__.BIGINT)
         unreachable_squares = np.logical_and(our_moves == __class__.BIGINT, their_moves == __class__.BIGINT)
         assert our_squares.sum() + their_squares.sum() + unreachable_squares.sum() == np.prod(array.shape)
         return our_squares.sum() - their_squares.sum(), unreachable_squares.sum()
@@ -60,6 +60,20 @@ class DeltaScorer(Scorer):
                     i += d_i
                     j += d_j
         return reachable
+
+
+class SimpleScorer(DeltaScorer):
+    BIGINT = 2**6
+
+    def __init__(self):
+        super().__init__()
+
+    def __call__(self, array: np.ndarray, us, them):
+
+        our_moves = self.count_squares(array, us)
+        their_moves = self.count_squares(array, them)
+
+        return (1 / (our_moves + 1)).sum() - (1 / (their_moves + 1).sum()),
 
 
 if __name__ == "__main__":
