@@ -21,11 +21,13 @@ def mover_iter():
             g.plot.title_artist.set_text(f'{player.name} loses!')
             break
         yield None
+    while True:
+        yield None
 
 
 if __name__ == "__main__":
     with_plot = True
-    g = utils.Game(2, (4, 6), with_plot=with_plot)
+    g = utils.Game('A4D1G1J4', (10, 10), with_plot=with_plot)
 
     mover = mover_iter()
 

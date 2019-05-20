@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+import re
 import numpy as np
 from matplotlib import pyplot as plt
 from enum import Enum
@@ -12,6 +12,10 @@ DIRECTIONS = ((1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -
 
 def print_pos(i, j):
     return chr(ord('A') + j) + str(i + 1)
+
+
+def unprint_pos(letter, number):
+    return int(number) - 1, ord(letter) - ord('A')
 
 
 class Occupier(Enum):
@@ -230,40 +234,46 @@ class DummyPlot:
         for arrows in arrows:
             self.add_artist(arrows)
 
-    def add_artist(self, piece):
+    @staticmethod
+    def add_artist(piece):
         piece.artist = DummyArtist()
 
 
 class Game:
-    def __init__(self, n_pieces, board_dims, n_players=2, with_plot=True):
-        self.n_pieces = n_pieces
+    def __init__(self, position_string: str, board_dims, n_players=2, with_plot=True, symmetry='mirror'):
+        self.starting_positions = self._extract_stating_positions(position_string)
+        self.n_pieces = len(self.starting_positions)
         self.n_players = n_players
 
         self.board = Board.empty(board_dims)
-        self.players = [Player(n_pieces, i, self) for i in range(n_players)]
+        self.players = [Player(self.n_pieces, i, self) for i in range(n_players)]
         self.arrows = [Item.wo_artist(Occupier.ARROW) for _ in np.ndindex(self.board.array.shape)]
         self.n_arrows = 0
         self.plot = Plot(self.board, self.players, self.arrows) if with_plot else \
             DummyPlot(self.board, self.players, self.arrows)
+        self.symmetry = symmetry
+
+    @staticmethod
+    def _extract_stating_positions(pos_str):
+        parts = re.split('([A-Z])', pos_str)
+        return [unprint_pos(letter, number) for letter, number in zip(parts[1::2], parts[2::2])]
 
     def start_game(self):
         # j = 0
         # for i, piece in enumerate(piece for player in self.players for piece in player.pieces):
         #     piece.move(i, j)
         #     self.board = self.board.add_obj(i, j, piece.occ)
-        for (i, j), piece_w, piece_b in zip(self._initial_positions(), *(player.pieces for player in self.players)):
+        for (i, j), piece_w, piece_b in zip(self.starting_positions, *(player.pieces for player in self.players)):
             piece_w.move(i, j)
             self.board = self.board.add_obj(i, j, piece_w.occ)
-            piece_b.move(j, self.board.n - i - 1)
-            self.board = self.board.add_obj(j, self.board.n - i - 1, piece_b.occ)
-
-    def _initial_positions(self):
-        if self.n_pieces == 1:
-            return (0, self.board.n // 2),
-        if self.n_pieces == 2:
-            return (0, self.board.n // 2), (self.board.m - 1, self.board.n // 2 - 1)
-        else:
-            raise ValueError
+            if self.symmetry == 'radial':
+                piece_b.move(j, self.board.n - i - 1)
+                self.board = self.board.add_obj(j, self.board.n - i - 1, piece_b.occ)
+            elif self.symmetry == 'mirror':
+                piece_b.move(self.board.m - i - 1, j)
+                self.board = self.board.add_obj(self.board.m - i - 1, j, piece_b.occ)
+            else:
+                raise ValueError
 
     def make_move(self, i_player, i_piece, i_to, j_to, i_arrow, j_arrow):
         piece = self.players[i_player].pieces[i_piece]
